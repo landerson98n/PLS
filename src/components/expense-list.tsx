@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -5,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, Save, Trash2, X } from 'lucide-react'
+import { Edit, Save, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 type Expense = {
   id: number
@@ -24,10 +27,10 @@ type Expense = {
 }
 
 const expenseTypes = [
-  { key: 'aircraft', label: 'Despesas de Aeronaves' },
+  { key: 'aircraft', label: 'Aeronaves' },
   { key: 'commission', label: 'Comissões' },
-  { key: 'vehicle', label: 'Despesas de Veículos' },
-  { key: 'specific', label: 'Despesas Específicas' },
+  { key: 'vehicle', label: 'Veículos' },
+  { key: 'specific', label: 'Específicas' },
 ]
 
 export function ExpenseList() {
@@ -55,6 +58,7 @@ export function ExpenseList() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [activeHarvest, setActiveHarvest] = useState('Safra 2023/2024')
+  const [expandedRows, setExpandedRows] = useState<number[]>([])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -129,7 +133,56 @@ export function ExpenseList() {
     })
   }
 
-  const renderTable = (expenses: Expense[]) => (
+  const toggleRowExpansion = (id: number) => {
+    setExpandedRows(prev =>
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    )
+  }
+
+  const renderMobileTable = (expenses: Expense[]) => (
+    <div className="space-y-4">
+      {expenses.map((expense) => (
+        <Card key={expense.id} className="bg-[#556B2F] text-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              ID: {expense.id} - {expense.date}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleRowExpansion(expense.id)}
+            >
+              {expandedRows.includes(expense.id) ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs">
+              <p>Origem: {expense.origin}</p>
+              <p>Valor: R$ {expense.value.toFixed(2)}</p>
+              <p>Pagamento: {expense.payment}</p>
+            </div>
+            {expandedRows.includes(expense.id) && (
+              <div className="mt-2 text-xs">
+                {expense.type && <p>Tipo: {expense.type}</p>}
+                {expense.description && <p>Descrição: {expense.description}</p>}
+                {expense.aircraft && <p>Aeronave: {expense.aircraft}</p>}
+                {expense.percentage && <p>Porcentagem: {expense.percentage}%</p>}
+                {expense.name && <p>Nome: {expense.name}</p>}
+                {expense.service && <p>Serviço: {expense.service}</p>}
+                <p>Safra: {expense.harvest}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
+  const renderDesktopTable = (expenses: Expense[]) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -141,21 +194,21 @@ export function ExpenseList() {
           </TableHead>
           <TableHead className="w-[100px] text-white">Ações</TableHead>
           <TableHead className='text-white'>ID</TableHead>
-          <TableHead className='text-white' >Data</TableHead>
-          <TableHead className='text-white' >Origem</TableHead>
-          {activeTab !== 'commission' && <TableHead className='text-white' >Tipo</TableHead>}
-          <TableHead className='text-white' >Descrição</TableHead>
-          <TableHead className='text-white' >Valor</TableHead>
-          <TableHead className='text-white' >Pagamento</TableHead>
-          {activeTab !== 'commission' && <TableHead className='text-white' >Aeronave</TableHead>}
+          <TableHead className='text-white'>Data</TableHead>
+          <TableHead className='text-white'>Origem</TableHead>
+          {activeTab !== 'commission' && <TableHead className='text-white'>Tipo</TableHead>}
+          <TableHead className='text-white'>Descrição</TableHead>
+          <TableHead className='text-white'>Valor</TableHead>
+          <TableHead className='text-white'>Pagamento</TableHead>
+          {activeTab !== 'commission' && <TableHead className='text-white'>Aeronave</TableHead>}
           {activeTab === 'commission' && (
             <>
-              <TableHead className='text-white' >Porcentagem</TableHead>
-              <TableHead className='text-white' >Nome</TableHead>
-              <TableHead className='text-white' >Serviço</TableHead>
+              <TableHead className='text-white'>Porcentagem</TableHead>
+              <TableHead className='text-white'>Nome</TableHead>
+              <TableHead className='text-white'>Serviço</TableHead>
             </>
           )}
-          <TableHead className='text-white' >Safra</TableHead>
+          <TableHead className='text-white'>Safra</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -172,19 +225,19 @@ export function ExpenseList() {
                 {editingId === expense.id ? (
                   <>
                     <Button variant="outline" size="icon" onClick={handleSaveEdit}>
-                      <Save className="h-4 w-4 text-black" />
+                      <Save className="h-4 w-4 text-[#4B5320]" />
                     </Button>
                     <Button variant="outline" size="icon" onClick={handleCancelEdit}>
-                      <X className="h-4 w-4 text-black" />
+                      <X className="h-4 w-4 text-[#4B5320]" />
                     </Button>
                   </>
                 ) : (
                   <Button variant="outline" size="icon" onClick={() => handleEdit(expense)}>
-                    <Edit className="h-4 w-4 text-black" />
+                    <Edit className="h-4 w-4 text-[#4B5320]" />
                   </Button>
                 )}
                 <Button variant="outline" size="icon" onClick={() => handleDelete(expense.id)}>
-                  <Trash2 className="h-4 w-4 text-black" />
+                  <Trash2 className="h-4 w-4 text-[#4B5320]" />
                 </Button>
               </div>
             </TableCell>
@@ -195,6 +248,7 @@ export function ExpenseList() {
                   name="date"
                   value={editingExpense?.date || ''}
                   onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
                 expense.date
@@ -208,6 +262,7 @@ export function ExpenseList() {
                     name="type"
                     value={editingExpense?.type || ''}
                     onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
                   />
                 ) : (
                   expense.type
@@ -220,6 +275,7 @@ export function ExpenseList() {
                   name="description"
                   value={editingExpense?.description || ''}
                   onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
                 expense.description
@@ -232,6 +288,7 @@ export function ExpenseList() {
                   type="number"
                   value={editingExpense?.value || ''}
                   onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
                 `R$ ${expense.value.toFixed(2)}`
@@ -244,12 +301,12 @@ export function ExpenseList() {
                   value={editingExpense?.payment || ''}
                   onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, payment: value } : null)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
                     <SelectValue placeholder="Status de pagamento" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Pago">Pago</SelectItem>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem  value="Pendente">Pendente</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
@@ -263,6 +320,7 @@ export function ExpenseList() {
                     name="aircraft"
                     value={editingExpense?.aircraft || ''}
                     onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
                   />
                 ) : (
                   expense.aircraft
@@ -278,6 +336,7 @@ export function ExpenseList() {
                       type="number"
                       value={editingExpense?.percentage || ''}
                       onChange={handleEditInputChange}
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
                     />
                   ) : (
                     `${expense.percentage}%`
@@ -289,6 +348,7 @@ export function ExpenseList() {
                       name="name"
                       value={editingExpense?.name || ''}
                       onChange={handleEditInputChange}
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
                     />
                   ) : (
                     expense.name
@@ -300,7 +360,7 @@ export function ExpenseList() {
                       name="service"
                       value={editingExpense?.service || ''}
                       onChange={handleEditInputChange}
-                     
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
                     />
                   ) : (
                     expense.service
@@ -314,6 +374,7 @@ export function ExpenseList() {
                   name="harvest"
                   value={editingExpense?.harvest || ''}
                   onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
                 expense.harvest
@@ -326,66 +387,71 @@ export function ExpenseList() {
   )
 
   return (
-    <div className="p-6 bg-[#4B5320] text-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">Lista de Despesas</h2>
+    <div className="p-4 sm:p-6 bg-[#4B5320] text-white rounded-lg shadow">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Lista de Despesas</h2>
       <div className="mb-4">
         <Select value={activeHarvest} onValueChange={setActiveHarvest}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
             <SelectValue placeholder="Selecione a safra" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-[#556B2F] text-white">
             <SelectItem value="Safra 2023/2024">Safra 2023/2024</SelectItem>
             <SelectItem value="Safra 2022/2023">Safra 2022/2023</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 max-md:h-28 h-16">
           {expenseTypes.map((type) => (
-            <TabsTrigger key={type.key} value={type.key}>
+            <TabsTrigger key={type.key} value={type.key} className="text-white bg-[#556B2F] my-2 mx-2">
               {type.label}
             </TabsTrigger>
           ))}
         </TabsList>
         {expenseTypes.map((type) => (
           <TabsContent key={type.key} value={type.key}>
-            <div className="flex justify-between items-center mb-4">
-              <Input placeholder="Pesquisar despesas..." className="max-w-sm" />
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+              <Input placeholder="Pesquisar despesas..." className="max-w-sm mb-2 sm:mb-0 bg-[#556B2F] text-white border-[#8FBC8F]" />
+              <div className="flex flex-col sm:flex-row gap-2">
                 {selectedExpenses.length > 0 && (
                   <>
                     <Select onValueChange={(value) => handleBulkUpdate('payment', value)}>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
                         <SelectValue placeholder="Atualizar pagamento" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-[#556B2F] text-white">
                         <SelectItem value="Pago">Pago</SelectItem>
                         <SelectItem value="Pendente">Pendente</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button variant="destructive" onClick={handleDeleteSelected}>
+                    <Button variant="destructive" onClick={handleDeleteSelected} className="bg-[#FF6B6B] text-white hover:bg-[#FF4040]">
                       Deletar Selecionados ({selectedExpenses.length})
                     </Button>
                   </>
                 )}
               </div>
             </div>
-            {renderTable(expenses[type.key].filter(expense => expense.harvest === activeHarvest))}
+            <div className="hidden sm:block">
+              {renderDesktopTable(expenses[type.key].filter(expense => expense.harvest === activeHarvest))}
+            </div>
+            <div className="sm:hidden">
+              {renderMobileTable(expenses[type.key].filter(expense => expense.harvest === activeHarvest))}
+            </div>
           </TabsContent>
         ))}
       </Tabs>
       <Dialog>
         <DialogTrigger asChild>
-          <Button className="mt-4">Exportar para Planilha</Button>
+          <Button className="mt-4 bg-[#8FBC8F] text-[#4B5320] hover:bg-[#006400]">Exportar para Planilha</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-[#556B2F] text-white">
           <DialogHeader>
             <DialogTitle>Exportar Despesas</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p>Esta funcionalidade permite exportar as despesas para uma planilha externa para controle de contas a pagar. Isso ajuda a evitar erros e facilita a gestão financeira.</p>
           </div>
-          <Button onClick={() => console.log("Exportar despesas")}>Exportar</Button>
+          <Button onClick={() => console.log("Exportar despesas")} className="bg-[#8FBC8F] text-[#4B5320] hover:bg-[#006400]">Exportar</Button>
         </DialogContent>
       </Dialog>
     </div>

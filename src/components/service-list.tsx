@@ -5,7 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Edit, Save, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Edit, Save, Trash2, X } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { ScrollArea } from './ui/scroll-area'
 
 type Service = {
   id: number
@@ -236,6 +238,97 @@ export function ServiceList() {
     ))
   }
 
+  const [expandedRows, setExpandedRows] = useState<number[]>([])
+
+  const toggleRowExpansion = (id: number) => {
+    setExpandedRows(prev =>
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    )
+  }
+
+  const renderMobileView = () => (
+    <div className="space-y-4">
+      {services.map((service) => (
+        <Card key={service.id} className="bg-[#556B2F] text-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Serviço ID: {service.id}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleRowExpansion(service.id)}
+            >
+              {expandedRows.includes(service.id) ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs">
+              <p>Data de Início: {service.data_inicio}</p>
+              <p>Solicitante: {service.solicitante_da_area}</p>
+              <p>Área: {service.nome_da_area}</p>
+              <p>Valor Total: R$ {service.valor_total_da_area.toFixed(2)}</p>
+            </div>
+            {expandedRows.includes(service.id) && (
+              <div className="mt-2 text-xs">
+                <p>Data Final: {service.data_final}</p>
+                <p>Tamanho (Hectares): {service.tamanho_area_hectares}</p>
+                <p>Tamanho (Alqueires): {service.tamanho_area_alqueires}</p>
+                <p>Tipo de Aplicação: {service.tipo_aplicacao_na_area}</p>
+                <p>Quantidade no Hopper: {service.quantidade_no_hopper_por_voo}</p>
+                <p>Tipo de Vazão: {service.tipo_de_vazao}</p>
+                <p>Quantidade de Voos: {service.quantidade_de_voos_na_area}</p>
+                <p>Valor por Alqueire: R$ {service.valor_por_alqueire.toFixed(2)}</p>
+                <p>Valor por Hectare: R$ {service.valor_por_hectare.toFixed(2)}</p>
+                <p>Valor Médio por Hora: R$ {service.valor_medio_por_hora_de_voo.toFixed(2)}</p>
+                <p>Pagamento: {service.confirmacao_de_pagamento_da_area}</p>
+                <p>Tempo de Voo: {service.tempo_de_voo_gasto_na_area}</p>
+                <p>Aeronave: {service.aeronave_data}</p>
+                <p>Piloto: {service.employee_data}</p>
+                <p>Lucro: R$ {service.lucro_por_area.toFixed(2)}</p>
+                <p>Percentual de Lucro: {service.percentual_de_lucro_liquido_por_area.toFixed(2)}%</p>
+                <p>Criado em: {service.criado_em}</p>
+                <p>Criado por: {service.criado_por}</p>
+              </div>
+            )}
+            <div className="mt-2 flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => handleEditService(service)}>
+                <Edit className="h-4 w-4 text-black" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDeleteService(service.id)}>
+                <Trash2 className="h-4 w-4  text-black" />
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className=' text-black'>Ver Despesas</Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#4B5320] text-white">
+                  <DialogHeader>
+                    <DialogTitle>Despesas do Serviço {service.id}</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-[300px]">
+                    {expenses.map((expense) => (
+                      <div key={expense.id} className="mb-2 p-2 bg-[#556B2F] rounded">
+                        <p>Data: {expense.data}</p>
+                        <p>Origem: {expense.origem}</p>
+                        <p>Valor: R$ {expense.valor.toFixed(2)}</p>
+                        <p>Pagamento: {expense.pagamento}</p>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg text-white">
       <div className="flex justify-between items-center mb-6">
@@ -273,6 +366,7 @@ export function ServiceList() {
           )}
         </div>
       </div>
+      <div className="max-md:hidden">
       <Table>
         <TableHeader>
           <TableRow >
@@ -282,7 +376,7 @@ export function ServiceList() {
                 onCheckedChange={handleSelectAll}
               />
             </TableHead>
-            <TableHead className='text-white'  className='text-white'>Ações</TableHead>
+            <TableHead className='text-white' className='text-white'>Ações</TableHead>
             <TableHead className='text-white' >ID</TableHead>
             <TableHead className='text-white' >Data de Início</TableHead>
             <TableHead className='text-white' >Data Final</TableHead>
@@ -633,6 +727,12 @@ export function ServiceList() {
           ))}
         </TableBody>
       </Table>
+      </div>
+      
+
+      <div className="sm:hidden">
+        {renderMobileView()}
+      </div>
     </div>
   )
 }

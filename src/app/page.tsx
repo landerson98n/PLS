@@ -1,6 +1,7 @@
 'use client'
+
 import React, { useState } from 'react'
-import { Airplay, Bell, ChevronDown, Frame, Plane } from 'lucide-react'
+import { Airplay, Bell, ChevronDown, Frame, Plane, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RegisterService } from '@/components/register-service'
 import { RegisterExpense } from '@/components/expense-filter'
@@ -10,9 +11,11 @@ import { ServiceList } from '@/components/service-list'
 import { ExpenseList } from '@/components/expense-list'
 import { DashboardPage } from '@/components/dashboard'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 
 export default function Dashboard() {
   const [activeComponent, setActiveComponent] = useState('dashboard')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const renderActiveComponent = () => {
     switch (activeComponent) {
@@ -34,34 +37,46 @@ export default function Dashboard() {
     }
   }
 
+  const navItems = [
+    { name: 'Dashboard', key: 'dashboard' },
+    { name: 'Registrar', key: 'register' },
+    { name: 'Listar Serviços', key: 'services' },
+    { name: 'Aeronaves', key: 'aircraft' },
+    { name: 'Despesas', key: 'expenses' },
+    { name: 'Funcionários', key: 'employees' },
+    { name: 'Listar Despesas', key: 'list-expenses' },
+  ]
+
+  const NavLinks = ({ onClick = () => {} }) => (
+    <>
+      {navItems.map((item) => (
+        <a
+          key={item.key}
+          href="#"
+          className={`block py-2 px-4 text-white hover:bg-black ${
+            activeComponent === item.key ? 'bg-black font-semibold' : ''
+          }`}
+          onClick={() => {
+            setActiveComponent(item.key)
+            onClick()
+          }}
+        >
+          {item.name}
+        </a>
+      ))}
+    </>
+  )
+
   return (
-    <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#556B2F] shadow-md">
+    <div className="flex flex-col h-screen bg-white lg:flex-row">
+      {/* Sidebar for larger screens */}
+      <aside className="hidden lg:block w-64 bg-[#556B2F] shadow-md">
         <div className="p-4 flex items-center gap-2">
           <Plane className="w-8 h-8 text-white" />
-          <span className="text-xl font-bold">PLS</span>
+          <span className="text-xl font-bold text-white">PLS</span>
         </div>
         <nav className="mt-6 text-white">
-          {[
-            { name: 'Dashboard', key: 'dashboard' },
-            { name: 'Registrar', key: 'register' },
-            { name: 'Listar Serviços', key: 'services' },
-            { name: 'Aeronaves', key: 'aircraft' },
-            { name: 'Despesas', key: 'expenses' },
-            { name: 'Funcionários', key: 'employees' },
-            { name: 'Listar Despesas', key: 'list-expenses' },
-          ].map((item) => (
-            <a
-              key={item.key}
-              href="#"
-              className={`block py-2 px-4 text-white hover:bg-black ${activeComponent === item.key ? 'bg-black font-semibold' : ''
-                }`}
-              onClick={() => setActiveComponent(item.key)}
-            >
-              {item.name}
-            </a>
-          ))}
+          <NavLinks />
         </nav>
       </aside>
 
@@ -70,9 +85,9 @@ export default function Dashboard() {
         {/* Header */}
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div className='w-[30%]'>
+            <div className='w-full sm:w-[30%]'>
               <Select>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a safra" />
                 </SelectTrigger>
                 <SelectContent>
@@ -83,16 +98,29 @@ export default function Dashboard() {
               </Select>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="hidden sm:flex items-center gap-2">
                 Samuel
                 <ChevronDown className="h-4 w-4" />
               </Button>
+              {/* Mobile menu button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-[#556B2F]">
+                  <nav className="mt-6 text-white">
+                    <NavLinks onClick={() => setIsMobileMenuOpen(false)} />
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </header>
 
         {/* Dashboard content */}
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           {renderActiveComponent()}
         </div>
       </main>
