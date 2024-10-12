@@ -369,6 +369,7 @@ export function ServiceList() {
               <TableHead className='text-white' >ID</TableHead>
               <TableHead className='text-white' >Aeronave</TableHead>
               <TableHead className='text-white' >Piloto</TableHead>
+              <TableHead className='text-white' >Valor Total da Área</TableHead>
               <TableHead className='text-white' >Data de Início</TableHead>
               <TableHead className='text-white' >Data Final</TableHead>
               <TableHead className='text-white' >Solicitante da Área</TableHead>
@@ -382,7 +383,6 @@ export function ServiceList() {
               <TableHead className='text-white' >Valor por Alqueire</TableHead>
               <TableHead className='text-white' >Valor por Hectare</TableHead>
               <TableHead className='text-white' >Valor Médio por Hora de Voo</TableHead>
-              <TableHead className='text-white' >Valor Total da Área</TableHead>
               <TableHead className='text-white' >Confirmação de Pagamento da Área</TableHead>
               <TableHead className='text-white' >Tempo de Voo Gasto na Área</TableHead>
               <TableHead className='text-white' >Lucro por Área</TableHead>
@@ -479,6 +479,19 @@ export function ServiceList() {
                     />
                   ) : (
                     service.employee_data
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="valor_total_da_area"
+                      type="number"
+                      value={editingService?.valor_total_da_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.valor_total_da_area.toFixed(2)}`
                   )}
                 </TableCell>
                 <TableCell>
@@ -640,19 +653,7 @@ export function ServiceList() {
                     `R$ ${service.valor_medio_por_hora_de_voo.toFixed(2)}`
                   )}
                 </TableCell>
-                <TableCell>
-                  {editingId === service.id ? (
-                    <Input
-                      className='w-24'
-                      name="valor_total_da_area"
-                      type="number"
-                      value={editingService?.valor_total_da_area || ''}
-                      onChange={handleEditInputChange}
-                    />
-                  ) : (
-                    `R$ ${service.valor_total_da_area.toFixed(2)}`
-                  )}
-                </TableCell>
+
                 <TableCell>
                   {editingId === service.id ? (
                     <Select
