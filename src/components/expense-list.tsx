@@ -389,17 +389,6 @@ export function ExpenseList() {
   return (
     <div className="p-4 sm:p-6 bg-[#4B5320] text-white rounded-lg shadow">
       <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Lista de Despesas</h2>
-      <div className="mb-4">
-        <Select value={activeHarvest} onValueChange={setActiveHarvest}>
-          <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
-            <SelectValue placeholder="Selecione a safra" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#556B2F] text-white">
-            <SelectItem value="Safra 2023/2024">Safra 2023/2024</SelectItem>
-            <SelectItem value="Safra 2022/2023">Safra 2022/2023</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 max-md:h-28 h-16">
           {expenseTypes.map((type) => (

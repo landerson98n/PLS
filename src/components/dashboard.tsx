@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -6,12 +8,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { addDays, format } from 'date-fns'
-import { CalendarIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+import { CalendarIcon } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Input } from "@/components/ui/input"
 
-// Simulação de dados (mantida como estava)
+// Simulated data (you would replace this with actual data fetching logic)
 const financialData = {
   "Safra 2023/2024": {
     income: 500000,
@@ -66,12 +68,11 @@ const expenseTypes = ['Aeronaves', 'Específicas', 'Veículos', 'Comissões']
 
 export function DashboardPage() {
   const [activeHarvest, setActiveHarvest] = useState("Safra 2023/2024")
-  const [dateRange, setDateRange] = useState({ from: addDays(new Date(), -30), to: new Date() })
+  const [selectedPilot, setSelectedPilot] = useState("")
+  const [selectedAircraft, setSelectedAircraft] = useState("")
+  const [startDate, setStartDate] = useState<Date | undefined>(addDays(new Date(), -30))
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date())
   const [selectedExpenseTypes, setSelectedExpenseTypes] = useState(expenseTypes)
-  const [isFinancialSummaryOpen, setIsFinancialSummaryOpen] = useState(false)
-  const [isExpenseCategoriesOpen, setIsExpenseCategoriesOpen] = useState(false)
-  const [isAircraftReportOpen, setIsAircraftReportOpen] = useState(false)
-  const [isDetailedExpensesOpen, setIsDetailedExpensesOpen] = useState(false)
 
   const data = financialData[activeHarvest]
 
@@ -79,12 +80,12 @@ export function DashboardPage() {
     return data.detailedExpenses.filter(expense => {
       const expenseDate = new Date(expense.date)
       return (
-        expenseDate >= dateRange.from &&
-        expenseDate <= dateRange.to &&
+        (!startDate || expenseDate >= startDate) &&
+        (!endDate || expenseDate <= endDate) &&
         selectedExpenseTypes.includes(expense.type)
       )
     })
-  }, [data.detailedExpenses, dateRange, selectedExpenseTypes])
+  }, [data.detailedExpenses, startDate, endDate, selectedExpenseTypes])
 
   const totalExpenses = useMemo(() => {
     return filteredExpenses.reduce((total, expense) => total + expense.value, 0)
@@ -97,181 +98,272 @@ export function DashboardPage() {
       }
       acc[expense.type] += expense.value
       return acc
-    }, {})
+    }, {} as Record<string, number>)
   }, [filteredExpenses])
 
-  const handleExpenseTypeToggle = (type) => {
+  const handleExpenseTypeToggle = (type: string) => {
     setSelectedExpenseTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     )
   }
 
+  const generateAircraftReport = () => {
+    // This is where you would typically fetch data from an API
+    // For now, we'll return a mock report
+    return {
+      nome_aeronave: selectedAircraft || "Nenhum serviço encontrado para essa aeronave nas datas especificadas.",
+      total_de_area_aplicada_em_hectares: 1000,
+      total_de_area_aplicada_em_alqueires: 413.22,
+      valor_total_bruto_recebido: 200000,
+      valor_medio_de_hectares_total: 200,
+      valor_medio_de_alqueires_total: 484.11,
+      total_de_horas_voadas: 50,
+      valor_medio_por_hora_de_voo_total: 4000,
+      lucro_total: 100000,
+      total_gasto_combustivel: 30000,
+      total_gasto_oleo: 5000,
+      comissoes_de_pilotos: 20000,
+      comissoes_de_badeco: 10000,
+      restante_das_despesas: 15000,
+      despesas_de_veiculo: 10000,
+      despesas_de_especificas: 10000
+    }
+  }
+
+  const aircraftReport = useMemo(generateAircraftReport, [selectedAircraft, startDate, endDate])
+
   return (
-    <div className="p-6 bg-[#4B5320] rounded-lg shadow">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Estatística</h2>
-        <Select value={activeHarvest} onValueChange={setActiveHarvest}>
-          <SelectTrigger className="w-[180px] text-white">
-            <SelectValue placeholder="Selecione a safra" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Safra 2023/2024">Safra 2023/2024</SelectItem>
-            <SelectItem value="Safra 2022/2023">Safra 2022/2023</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+        <h2 className="text-2xl font-bold">Estatística</h2>
+        <div className="space-y-2 w-full md:w-auto">
+          <Select value={selectedPilot} onValueChange={setSelectedPilot}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Selecione o piloto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="piloto1">Piloto 1</SelectItem>
+              <SelectItem value="piloto2">Piloto 2</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedAircraft} onValueChange={setSelectedAircraft}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Selecione a aeronave" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PT-XYZ">PT-XYZ</SelectItem>
+              <SelectItem value="PR-ABC">PR-ABC</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <Collapsible open={isFinancialSummaryOpen} onOpenChange={setIsFinancialSummaryOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="flex justify-between w-full">
-              <span>Resumo Financeiro</span>
-              {isFinancialSummaryOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4">
-                <p>Receita: R$ {data.income.toLocaleString()}</p>
-                <p>Despesas: R$ {data.expenses.toLocaleString()}</p>
-                <p>Lucro: R$ {(data.income - data.expenses).toLocaleString()}</p>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+      <div className="space-y-6">
+        <Card className="bg-[#556B2F] text-white">
+          <CardHeader>
+            <CardTitle>Relatório de Aeronave</CardTitle>
+          </CardHeader>
 
-        <Collapsible open={isExpenseCategoriesOpen} onOpenChange={setIsExpenseCategoriesOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="flex justify-between w-full">
-              <span>Despesas por Categoria</span>
-              {isExpenseCategoriesOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4 h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data.expensesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {data.expensesByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+          <div className="flex flex-col mb-5 ml-6 md:flex-row space-y-2 md:space-y-0 md:space-x-4 w-[50%]">
+            <div className="flex-1">
+              <Label htmlFor="start-date">Data Inicial</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className="w-full justify-start text-left font-normal text-black"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione uma data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="end-date">Data Final</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className="w-full justify-start text-left font-normal text-black"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione uma data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <CardContent>
+            <div className="space-y-2">
+              <p>Nome da Aeronave: {aircraftReport.nome_aeronave}</p>
+              <p>Total de Área Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
+              <p>Total de Área Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
+              <p>Valor Total Bruto Recebido: R$ {aircraftReport.valor_total_bruto_recebido.toLocaleString()}</p>
+              <p>Valor Médio de Hectares Total: R$ {aircraftReport.valor_medio_de_hectares_total.toLocaleString()}</p>
+              <p>Valor Médio de Alqueires Total: R$ {aircraftReport.valor_medio_de_alqueires_total.toLocaleString()}</p>
+              <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
+              <p>Valor Médio por Hora de Voo Total: R$   {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
+              <p>Lucro Total: R$ {aircraftReport.lucro_total.toLocaleString()}</p>
+              <p>Total Gasto com Combustível: R$ {aircraftReport.total_gasto_combustivel.toLocaleString()}</p>
+              <p>Total Gasto com Óleo: R$ {aircraftReport.total_gasto_oleo.toLocaleString()}</p>
+              <p>Comissões de Pilotos: R$ {aircraftReport.comissoes_de_pilotos.toLocaleString()}</p>
+              <p>Comissões de Badeco: R$ {aircraftReport.comissoes_de_badeco.toLocaleString()}</p>
+              <p>Restante das Despesas: R$ {aircraftReport.restante_das_despesas.toLocaleString()}</p>
+              <p>Despesas de Veículo: R$ {aircraftReport.despesas_de_veiculo.toLocaleString()}</p>
+              <p>Despesas Específicas: R$ {aircraftReport.despesas_de_especificas.toLocaleString()}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#556B2F] text-white">
+          <CardHeader>
+            <CardTitle>Resumo Financeiro</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Receita: R$ {data.income.toLocaleString()}</p>
+            <p>Despesas: R$ {data.expenses.toLocaleString()}</p>
+            <p>Lucro: R$ {(data.income - data.expenses).toLocaleString()}</p>
+          </CardContent>
+        </Card>
 
-        <Collapsible open={isAircraftReportOpen} onOpenChange={setIsAircraftReportOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="flex justify-between w-full">
-              <span>Relatório de Aeronaves</span>
-              {isAircraftReportOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4 h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.aircraftReports}>
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="flightHours" fill="#8884d8" name="Horas de Voo" />
-                    <Bar dataKey="revenue" fill="#82ca9d" name="Receita" />
-                    <Bar dataKey="expenses" fill="#ffc658" name="Despesas" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+        <Card className="bg-[#556B2F] text-white">
+          <CardHeader>
+            <CardTitle>Despesas por Categoria</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.expensesByCategory}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {data.expensesByCategory.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <Collapsible open={isDetailedExpensesOpen} onOpenChange={setIsDetailedExpensesOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="flex justify-between w-full">
-              <span>Despesas Detalhadas</span>
-              {isDetailedExpensesOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card className="mt-2">
-              <CardContent className="pt-4">
-                <div className="flex flex-col space-y-4">
-                  <div className="flex-1 space-y-2">
-                    <Label htmlFor="date-range" className="text-[#11428C]">Período</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="date-range"
-                          variant={"outline"}
-                          className="w-full justify-start text-left font-normal border-[#FC862D] focus:ring-[#FC862D]"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4 text-[#FC862D]" />
-                          {dateRange.from ? (
-                            dateRange.to ? (
-                              <>
-                                {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
-                              </>
-                            ) : (
-                              format(dateRange.from, "dd/MM/yyyy")
-                            )
-                          ) : (
-                            <span>Selecione um período</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          initialFocus
-                          mode="range"
-                          defaultMonth={dateRange.from}
-                          selected={dateRange}
-                          onSelect={(range) => range && setDateRange({ from: range.from || dateRange.from, to: range.to || dateRange.to })}
-                          numberOfMonths={2}
-                          className="border-[#FC862D]"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="flex flex-wrap gap-4">
-                    {expenseTypes.map(type => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={type}
-                          checked={selectedExpenseTypes.includes(type)}
-                          onCheckedChange={() => handleExpenseTypeToggle(type)}
-                        />
-                        <Label htmlFor={type}>{type}</Label>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Total de Despesas: R$ {totalExpenses.toLocaleString()}</h3>
-                    <ul>
-                      {Object.entries(expensesByType).map(([type, value]) => (
-                        <li key={type}>{type}: R$ {value.toLocaleString()}</li>
-                      ))}
-                    </ul>
-                  </div>
+        <Card className="bg-white text-black">
+          <CardHeader>
+            <CardTitle>Relatório de Aeronaves</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px] text-white">
+            <ResponsiveContainer width="100%" height="100%" >
+              <BarChart data={data.aircraftReports}>
+                <XAxis dataKey="name" />
+                <YAxis  />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#82ca9d" name="Receita" />
+                <Bar dataKey="expenses" fill="#ffc658" name="Despesas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#556B2F] text-white">
+          <CardHeader>
+            <CardTitle>Despesas Detalhadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
+                <div className="flex-1">
+                  <Label htmlFor="start-date">Data Inicial</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full text-black justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione uma data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+                <div className="flex-1">
+                  <Label htmlFor="end-date">Data Final</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full text-black justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione uma data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {expenseTypes.map(type => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={type}
+                      checked={selectedExpenseTypes.includes(type)}
+                      onCheckedChange={() => handleExpenseTypeToggle(type)}
+                    />
+                    <Label htmlFor={type}>{type}</Label>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Total de Despesas: R$ {totalExpenses.toLocaleString()}</h3>
+                <ul>
+                  {Object.entries(expensesByType).map(([type, value]) => (
+                    <li key={type}>{type}: R$ {value.toLocaleString()}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
       </div>
     </div>
   )

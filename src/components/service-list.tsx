@@ -334,17 +334,6 @@ export function ServiceList() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">Serviços:</h2>
-          <div className="mt-4">
-            <Select value={activeHarvest} onValueChange={setActiveHarvest}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecione a safra" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Safra 2023/2024">Safra 2023/2024</SelectItem>
-                <SelectItem value="Safra 2022/2023">Safra 2022/2023</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div className="flex gap-2">
@@ -367,368 +356,369 @@ export function ServiceList() {
         </div>
       </div>
       <div className="max-md:hidden">
-      <Table>
-        <TableHeader>
-          <TableRow >
-            <TableHead className="w-[50px]">
-              <Checkbox
-                checked={selectedServices.length === services.length}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            <TableHead className='text-white' className='text-white'>Ações</TableHead>
-            <TableHead className='text-white' >ID</TableHead>
-            <TableHead className='text-white' >Data de Início</TableHead>
-            <TableHead className='text-white' >Data Final</TableHead>
-            <TableHead className='text-white' >Solicitante da Área</TableHead>
-            <TableHead className='text-white' >Nome da Área</TableHead>
-            <TableHead className='text-white' >Tamanho da Área (Hectares)</TableHead>
-            <TableHead className='text-white' >Tamanho da Área (Alqueires)</TableHead>
-            <TableHead className='text-white' >Tipo de Aplicação na Área</TableHead>
-            <TableHead className='text-white' >Quantidade no hopper por voo</TableHead>
-            <TableHead className='text-white' >Tipo de Vazão</TableHead>
-            <TableHead className='text-white' >Quantidade de Voos na Área</TableHead>
-            <TableHead className='text-white' >Valor por Alqueire</TableHead>
-            <TableHead className='text-white' >Valor por Hectare</TableHead>
-            <TableHead className='text-white' >Valor Médio por Hora de Voo</TableHead>
-            <TableHead className='text-white' >Valor Total da Área</TableHead>
-            <TableHead className='text-white' >Confirmação de Pagamento da Área</TableHead>
-            <TableHead className='text-white' >Tempo de Voo Gasto na Área</TableHead>
-            <TableHead className='text-white' >Aeronave</TableHead>
-            <TableHead className='text-white' >Piloto</TableHead>
-            <TableHead className='text-white' >Lucro por Área</TableHead>
-            <TableHead className='text-white' >Percentual de Lucro Líquido por Área</TableHead>
-            <TableHead className='text-white' >Criado Em</TableHead>
-            <TableHead className='text-white' >Criado Por</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody >
-          {services.map((service) => (
-            <TableRow key={service.id}>
-              <TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow >
+              <TableHead className="w-[50px]">
                 <Checkbox
-                  checked={selectedServices.includes(service.id)}
-                  onCheckedChange={() => handleSelectService(service.id)}
+                  checked={selectedServices.length === services.length}
+                  onCheckedChange={handleSelectAll}
                 />
-              </TableCell>
-              <TableCell>
-                <div className="flex space-x-2 text-black">
-                  {editingId === service.id ? (
-                    <>
-                      <Button variant="outline" size="sm" onClick={handleSaveEdit}>
-                        <Save className="h-4 w-4 " />
-                      </Button>
-                    </>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={() => handleEditService(service)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteService(service.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  {!editingId &&
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">Ver Despesas</Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Despesas do Serviço {service.id}</DialogTitle>
-                        </DialogHeader>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ID</TableHead>
-                              <TableHead>Data</TableHead>
-                              <TableHead>Origem</TableHead>
-                              <TableHead>Porcentagem</TableHead>
-                              <TableHead>Valor</TableHead>
-                              <TableHead>Pagamento</TableHead>
-                              <TableHead>Funcionário</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {expenses.map((expense) => (
-                              <TableRow key={expense.id}>
-                                <TableCell>{expense.id}</TableCell>
-                                <TableCell>{expense.data}</TableCell>
-                                <TableCell>{expense.origem}</TableCell>
-                                <TableCell>{expense.porcentagem}%</TableCell>
-                                <TableCell>R$ {expense.valor.toFixed(2)}</TableCell>
-                                <TableCell>{expense.pagamento}</TableCell>
-                                <TableCell>{expense.funcionario}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </DialogContent>
-                    </Dialog>}
-
-                </div>
-              </TableCell>
-              <TableCell>{service.id}</TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="data_inicio"
-                    value={editingService?.data_inicio || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.data_inicio
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="data_final"
-                    value={editingService?.data_final || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.data_final
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="solicitante_da_area"
-                    value={editingService?.solicitante_da_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.solicitante_da_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="nome_da_area"
-                    value={editingService?.nome_da_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.nome_da_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="tamanho_area_hectares"
-                    type="number"
-                    value={editingService?.tamanho_area_hectares || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.tamanho_area_hectares
-                )}
-              </TableCell>
-              <TableCell>{service.tamanho_area_alqueires}</TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Select
-                    name="tipo_aplicacao_na_area"
-                    value={editingService?.tipo_aplicacao_na_area || ''}
-                    onValueChange={(value) => handleEditSelectChange('tipo_aplicacao_na_area', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Semente">Semente</SelectItem>
-                      <SelectItem value="Fertilizante">Fertilizante</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  service.tipo_aplicacao_na_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="quantidade_no_hopper_por_voo"
-                    type="number"
-
-                    value={editingService?.quantidade_no_hopper_por_voo || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.quantidade_no_hopper_por_voo
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="tipo_de_vazao"
-                    value={editingService?.tipo_de_vazao || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.tipo_de_vazao
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="quantidade_de_voos_na_area"
-                    type="number"
-                    value={editingService?.quantidade_de_voos_na_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.quantidade_de_voos_na_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="valor_por_alqueire"
-                    type="number"
-                    value={editingService?.valor_por_alqueire || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `R$ ${service.valor_por_alqueire.toFixed(2)}`
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="valor_por_hectare"
-                    type="number"
-                    value={editingService?.valor_por_hectare || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `R$ ${service.valor_por_hectare.toFixed(2)}`
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="valor_medio_por_hora_de_voo"
-                    type="number"
-                    value={editingService?.valor_medio_por_hora_de_voo || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `R$ ${service.valor_medio_por_hora_de_voo.toFixed(2)}`
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="valor_total_da_area"
-                    type="number"
-                    value={editingService?.valor_total_da_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `R$ ${service.valor_total_da_area.toFixed(2)}`
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Select
-                    name="confirmacao_de_pagamento_da_area"
-                    value={editingService?.confirmacao_de_pagamento_da_area || ''}
-                    onValueChange={(value) => handleEditSelectChange('confirmacao_de_pagamento_da_area', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pago">Pago</SelectItem>
-                      <SelectItem value="Em aberto">Em aberto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  service.confirmacao_de_pagamento_da_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="tempo_de_voo_gasto_na_area"
-                    value={editingService?.tempo_de_voo_gasto_na_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.tempo_de_voo_gasto_na_area
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="aeronave_data"
-                    value={editingService?.aeronave_data || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.aeronave_data
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="employee_data"
-                    value={editingService?.employee_data || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  service.employee_data
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="lucro_por_area"
-                    type="number"
-                    value={editingService?.lucro_por_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `R$ ${service.lucro_por_area.toFixed(2)}`
-                )}
-              </TableCell>
-              <TableCell>
-                {editingId === service.id ? (
-                  <Input
-                    className='w-24'
-                    name="percentual_de_lucro_liquido_por_area"
-                    type="number"
-                    value={editingService?.percentual_de_lucro_liquido_por_area || ''}
-                    onChange={handleEditInputChange}
-                  />
-                ) : (
-                  `${service.percentual_de_lucro_liquido_por_area.toFixed(2)}%`
-                )}
-              </TableCell>
-              <TableCell>{service.criado_em}</TableCell>
-              <TableCell>{service.criado_por}</TableCell>
+              </TableHead>
+              <TableHead className='text-white' className='text-white'>Ações</TableHead>
+              <TableHead className='text-white' >ID</TableHead>
+              <TableHead className='text-white' >Aeronave</TableHead>
+              <TableHead className='text-white' >Piloto</TableHead>
+              <TableHead className='text-white' >Data de Início</TableHead>
+              <TableHead className='text-white' >Data Final</TableHead>
+              <TableHead className='text-white' >Solicitante da Área</TableHead>
+              <TableHead className='text-white' >Nome da Área</TableHead>
+              <TableHead className='text-white' >Tamanho da Área (Hectares)</TableHead>
+              <TableHead className='text-white' >Tamanho da Área (Alqueires)</TableHead>
+              <TableHead className='text-white' >Tipo de Aplicação na Área</TableHead>
+              <TableHead className='text-white' >Quantidade no hopper por voo</TableHead>
+              <TableHead className='text-white' >Tipo de Vazão</TableHead>
+              <TableHead className='text-white' >Quantidade de Voos na Área</TableHead>
+              <TableHead className='text-white' >Valor por Alqueire</TableHead>
+              <TableHead className='text-white' >Valor por Hectare</TableHead>
+              <TableHead className='text-white' >Valor Médio por Hora de Voo</TableHead>
+              <TableHead className='text-white' >Valor Total da Área</TableHead>
+              <TableHead className='text-white' >Confirmação de Pagamento da Área</TableHead>
+              <TableHead className='text-white' >Tempo de Voo Gasto na Área</TableHead>
+              <TableHead className='text-white' >Lucro por Área</TableHead>
+              <TableHead className='text-white' >Percentual de Lucro Líquido por Área</TableHead>
+              <TableHead className='text-white' >Criado Em</TableHead>
+              <TableHead className='text-white' >Criado Por</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody >
+            {services.map((service) => (
+              <TableRow key={service.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedServices.includes(service.id)}
+                    onCheckedChange={() => handleSelectService(service.id)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2 text-black">
+                    {editingId === service.id ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={handleSaveEdit}>
+                          <Save className="h-4 w-4 " />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => handleEditService(service)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => handleDeleteService(service.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    {!editingId &&
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">Ver Despesas</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Despesas do Serviço {service.id}</DialogTitle>
+                          </DialogHeader>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Origem</TableHead>
+                                <TableHead>Porcentagem</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Pagamento</TableHead>
+                                <TableHead>Funcionário</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {expenses.map((expense) => (
+                                <TableRow key={expense.id}>
+                                  <TableCell>{expense.id}</TableCell>
+                                  <TableCell>{expense.data}</TableCell>
+                                  <TableCell>{expense.origem}</TableCell>
+                                  <TableCell>{expense.porcentagem}%</TableCell>
+                                  <TableCell>R$ {expense.valor.toFixed(2)}</TableCell>
+                                  <TableCell>{expense.pagamento}</TableCell>
+                                  <TableCell>{expense.funcionario}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </DialogContent>
+                      </Dialog>}
+
+                  </div>
+                </TableCell>
+                <TableCell>{service.id}</TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="aeronave_data"
+                      value={editingService?.aeronave_data || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.aeronave_data
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="employee_data"
+                      value={editingService?.employee_data || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.employee_data
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="data_inicio"
+                      value={editingService?.data_inicio || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.data_inicio
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="data_final"
+                      value={editingService?.data_final || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.data_final
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="solicitante_da_area"
+                      value={editingService?.solicitante_da_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.solicitante_da_area
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="nome_da_area"
+                      value={editingService?.nome_da_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.nome_da_area
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="tamanho_area_hectares"
+                      type="number"
+                      value={editingService?.tamanho_area_hectares || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.tamanho_area_hectares
+                  )}
+                </TableCell>
+                <TableCell>{service.tamanho_area_alqueires}</TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Select
+                      name="tipo_aplicacao_na_area"
+                      value={editingService?.tipo_aplicacao_na_area || ''}
+                      onValueChange={(value) => handleEditSelectChange('tipo_aplicacao_na_area', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Semente">Semente</SelectItem>
+                        <SelectItem value="Fertilizante">Fertilizante</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    service.tipo_aplicacao_na_area
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="quantidade_no_hopper_por_voo"
+                      type="number"
+
+                      value={editingService?.quantidade_no_hopper_por_voo || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.quantidade_no_hopper_por_voo
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="tipo_de_vazao"
+                      value={editingService?.tipo_de_vazao || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.tipo_de_vazao
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="quantidade_de_voos_na_area"
+                      type="number"
+                      value={editingService?.quantidade_de_voos_na_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.quantidade_de_voos_na_area
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="valor_por_alqueire"
+                      type="number"
+                      value={editingService?.valor_por_alqueire || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.valor_por_alqueire.toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="valor_por_hectare"
+                      type="number"
+                      value={editingService?.valor_por_hectare || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.valor_por_hectare.toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="valor_medio_por_hora_de_voo"
+                      type="number"
+                      value={editingService?.valor_medio_por_hora_de_voo || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.valor_medio_por_hora_de_voo.toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="valor_total_da_area"
+                      type="number"
+                      value={editingService?.valor_total_da_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.valor_total_da_area.toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Select
+                      name="confirmacao_de_pagamento_da_area"
+                      value={editingService?.confirmacao_de_pagamento_da_area || ''}
+                      onValueChange={(value) => handleEditSelectChange('confirmacao_de_pagamento_da_area', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pago">Pago</SelectItem>
+                        <SelectItem value="Em aberto">Em aberto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    service.confirmacao_de_pagamento_da_area
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="tempo_de_voo_gasto_na_area"
+                      value={editingService?.tempo_de_voo_gasto_na_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    service.tempo_de_voo_gasto_na_area
+                  )}
+                </TableCell>
+
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="lucro_por_area"
+                      type="number"
+                      value={editingService?.lucro_por_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `R$ ${service.lucro_por_area.toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === service.id ? (
+                    <Input
+                      className='w-24'
+                      name="percentual_de_lucro_liquido_por_area"
+                      type="number"
+                      value={editingService?.percentual_de_lucro_liquido_por_area || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  ) : (
+                    `${service.percentual_de_lucro_liquido_por_area.toFixed(2)}%`
+                  )}
+                </TableCell>
+                <TableCell>{service.criado_em}</TableCell>
+                <TableCell>{service.criado_por}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
-      
+
 
       <div className="sm:hidden">
         {renderMobileView()}
