@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -12,6 +12,7 @@ import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import axios from 'axios'
 
 const baseSchema = z.object({
   data: z.date({
@@ -19,10 +20,7 @@ const baseSchema = z.object({
   }),
   origem: z.enum(['Comissão do Funcionário', 'Despesa do Avião', 'Despesa do Veículo', 'Despesa Específica'], {
     required_error: "A origem da despesa é obrigatória.",
-  }),
-  safra: z.string({
-    required_error: "A safra é obrigatória.",
-  }),
+  })
 })
 
 const comissaoSchema = baseSchema.extend({
@@ -65,21 +63,55 @@ const schema = z.discriminatedUnion('origem', [
 
 type ExpenseFormData = z.infer<typeof schema>
 
-export function RegisterExpense() {
+export function RegisterExpense({ selectedSafra }) {
   const { control, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       origem: 'Comissão do Funcionário',
       data: new Date(),
-      safra: '',
     },
+  })
+
+  const [expenses, setExpenses] = useState<Record<string, []>>({
+    funcionario: [],
+    aeronaves: [],
+    veiculos: [],
+    servicos: []
   })
 
   const selectedOrigin = watch('origem')
 
-  const onSubmit = (data: ExpenseFormData) => {
+  const fetchData = async () => {
+    try {
+      const expensesFuncionario = await axios.get('http://0.0.0.0:8000/employees');
+      const expensesAeronaves = await axios.get('http://0.0.0.0:8000/aircraft');
+      const expensesServicos = await axios.get('http://0.0.0.0:8000/services');
+
+      setExpenses(prevExpenses => ({
+        ...prevExpenses,
+        funcionario: expensesFuncionario.data,
+        aeronaves: expensesAeronaves.data,
+        servicos: expensesServicos.data
+      }))
+
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedSafra]);
+
+  const onSubmit = async (data: ExpenseFormData) => {
+    try {
+      const resp = await axios.post('http://0.0.0.0:8000/employees', data)
+
+    } catch (error) {
+      console.log(error);
+
+    }
     console.log(data)
-    // Here you would typically send the data to your backend
   }
 
   return (
@@ -136,26 +168,6 @@ export function RegisterExpense() {
             />
             {errors.origem && <p className="text-red-500 text-sm">{errors.origem.message}</p>}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="safra">Safra</Label>
-            <Controller
-              name="safra"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a safra" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2023/2024">Safra 2023/2024</SelectItem>
-                    <SelectItem value="2022/2023">Safra 2022/2023</SelectItem>
-                    <SelectItem value="2021/2022">Safra 2021/2022</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.safra && <p className="text-red-500 text-sm">{errors.safra.message}</p>}
-          </div>
         </div>
 
         {selectedOrigin === 'Comissão do Funcionário' && (
@@ -171,8 +183,9 @@ export function RegisterExpense() {
                       <SelectValue placeholder="Selecione o funcionário" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Funcionário 1</SelectItem>
-                      <SelectItem value="2">Funcionário 2</SelectItem>
+                      {expenses.funcionario.map((item => (
+                        <SelectItem value={item.id}>{item.name} - {item.role}</SelectItem>
+                      )))}
                     </SelectContent>
                   </Select>
                 )}
@@ -201,8 +214,15 @@ export function RegisterExpense() {
                       <SelectValue placeholder="Selecione o serviço" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Serviço 1</SelectItem>
-                      <SelectItem value="2">Serviço 2</SelectItem>
+                      {expenses.servicos.map((item => (
+                        <SelectItem value={item.id}>
+                          {`${item.id} |
+                          ${item.nome_da_area} |
+                          ${item.solicitante_da_area} de
+                          ${item.data_inicio} até
+                          ${item.data_final}`}
+                        </SelectItem>
+                      )))}
                     </SelectContent>
                   </Select>
                 )}
@@ -251,11 +271,12 @@ export function RegisterExpense() {
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder={`Selecione ${selectedOrigin === 'Despesa do Veículo' ? 'o veículo' : 'a aeronave'}`} />
+                      <SelectValue placeholder={`Selecione a aeronave`} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">{selectedOrigin === 'Despesa do Veículo' ? 'Veículo 1' : 'Aeronave 1'}</SelectItem>
-                      <SelectItem value="2">{selectedOrigin === 'Despesa do Veículo' ? 'Veículo 2' : 'Aeronave 2'}</SelectItem>
+                      {expenses.aeronaves.map((item => (
+                        <SelectItem value={item.id}>{item.brand} - {item.model} </SelectItem>
+                      )))}
                     </SelectContent>
                   </Select>
                 )}

@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import axios from 'axios'
 
 const serviceSchema = z.object({
   data_inicio: z.string().nonempty('Data de início é obrigatória'),
@@ -39,7 +40,7 @@ const serviceSchema = z.object({
 
 type ServiceFormData = z.infer<typeof serviceSchema>
 
-export function RegisterService() {
+export function RegisterService({selectedSafra}) {
   const [aeronaves, setAeronaves] = useState([])
   const [employees, setEmployees] = useState([])
 
@@ -66,20 +67,31 @@ export function RegisterService() {
   })
 
   useEffect(() => {
-    // Simulating API calls to fetch aeronaves and employees
-    setAeronaves([
-      { id: '1', nome: 'Aeronave 1' },
-      { id: '2', nome: 'Aeronave 2' },
-    ])
-    setEmployees([
-      { id: '1', nome: 'Piloto 1' },
-      { id: '2', nome: 'Piloto 2' },
-    ])
+    async function getData() {
+      const avioesData = await axios.get('http://0.0.0.0:8000/aircraft')
+      setAeronaves(avioesData.data)
+      console.log(avioesData);
+
+      const empregadosData = await axios.get('http://0.0.0.0:8000/employees')
+      setEmployees(empregadosData.data.filter((item) => {
+        return item.role === "Piloto"
+      }))
+      console.log(empregadosData);
+    }
+    getData()
+
   }, [])
 
+
+
   const onSubmit = (data: ServiceFormData) => {
-    console.log(data)
-    // Here you would typically send the data to your backend
+    console.log(data);
+
+    try {
+      const resp = axios.post('http://0.0.0.0:8000/services', data)
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   return (
@@ -237,7 +249,7 @@ export function RegisterService() {
                   </SelectTrigger>
                   <SelectContent>
                     {aeronaves.map((aeronave) => (
-                      <SelectItem key={aeronave.id} value={aeronave.id}>{aeronave.nome}</SelectItem>
+                      <SelectItem key={aeronave.id} value={aeronave.id}>{aeronave.model}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -257,7 +269,7 @@ export function RegisterService() {
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>{employee.nome}</SelectItem>
+                      <SelectItem key={employee.id} value={employee.id}>{employee.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

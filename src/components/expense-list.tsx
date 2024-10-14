@@ -1,28 +1,30 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, Save, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Edit, Save, Trash2, X, ChevronDown, ChevronUp, Filter, ChevronLeft, ChevronsLeft, ChevronRight, ChevronsRight } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import axios from 'axios'
 
 type Expense = {
   id: number
-  date: string
-  origin: string
-  type?: string
-  description?: string
-  value: number
-  payment: string
-  aircraft?: string
-  percentage?: number
-  name?: string
-  service?: string
+  data: string
+  origem: string
+  tipo?: string
+  descricao?: string
+  valor: number
+  confirmação_de_pagamento: string
+  aircraft_name?: string
+  porcentagem?: number
+  employee_name?: string
+  service_name?: string
   harvest: string
 }
 
@@ -33,25 +35,13 @@ const expenseTypes = [
   { key: 'specific', label: 'Específicas' },
 ]
 
-export function ExpenseList() {
+export function ExpenseList({ selectedSafra }) {
   const [activeTab, setActiveTab] = useState('aircraft')
   const [expenses, setExpenses] = useState<Record<string, Expense[]>>({
-    aircraft: [
-      { id: 20, date: '24/09/2023', origin: 'Despesa do Avião', type: 'Específica', description: 'Tanque de 5 mil litros', value: 4369.00, payment: 'Pendente', aircraft: 'PT-GYG - 202 - Embraer', harvest: 'Safra 2023/2024' },
-      { id: 21, date: '25/09/2023', origin: 'Despesa do Avião', type: 'Manutenção', description: 'Revisão de rotina', value: 2500.00, payment: 'Pendente', aircraft: 'PT-GYG - 202 - Embraer', harvest: 'Safra 2023/2024' },
-    ],
-    commission: [
-      { id: 1, date: '26/09/2023', origin: 'Comissão', percentage: 5, value: 500.00, payment: 'Pendente', name: 'João Silva', service: 'Voo 123', harvest: 'Safra 2023/2024' },
-      { id: 2, date: '27/09/2023', origin: 'Comissão', percentage: 7, value: 700.00, payment: 'Pendente', name: 'Maria Oliveira', service: 'Voo 456', harvest: 'Safra 2023/2024' },
-    ],
-    vehicle: [
-      { id: 32, date: '30/09/2023', origin: 'Despesa do Veículo', type: 'Combustível', description: 'Diesel Hilux', value: 409.50, payment: 'Pendente', aircraft: 'PT-GYG - 202 - Embraer', harvest: 'Safra 2023/2024' },
-      { id: 33, date: '01/10/2023', origin: 'Despesa do Veículo', type: 'Manutenção', description: 'Troca de óleo', value: 250.00, payment: 'Pendente', aircraft: 'PT-GYG - 202 - Embraer', harvest: 'Safra 2023/2024' },
-    ],
-    specific: [
-      { id: 56, date: '20/10/2023', origin: 'Despesa Específica', description: 'Taxa Aeroporto', aircraft: 'PT-GYG-202-Embraer', value: 133.34, payment: 'Pendente', harvest: 'Safra 2023/2024' },
-      { id: 57, date: '21/10/2023', origin: 'Despesa Específica', description: 'Seguro anual', aircraft: 'PT-GYG-202-Embraer', value: 5000.00, payment: 'Pendente', harvest: 'Safra 2023/2024' },
-    ],
+    aircraft: [],
+    commission: [],
+    vehicle: [],
+    specific: [],
   })
 
   const [selectedExpenses, setSelectedExpenses] = useState<number[]>([])
@@ -60,9 +50,56 @@ export function ExpenseList() {
   const [activeHarvest, setActiveHarvest] = useState('Safra 2023/2024')
   const [expandedRows, setExpandedRows] = useState<number[]>([])
 
+  // New state variables for pagination, filtering, and search
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  const fetchData = async () => {
+    try {
+      const expensesAircraft = await axios.get('http://0.0.0.0:8000/expenses_aircraft');
+      const expensesCommission = await axios.get('http://0.0.0.0:8000/comissions');
+      const expensesVehicle = await axios.get('http://0.0.0.0:8000/expenses_vehicles');
+      const expensesSpecific = await axios.get('http://0.0.0.0:8000/expenses_specific');
+
+      setExpenses({
+        specific: expensesSpecific.data,
+        vehicle: expensesVehicle.data,
+        commission: expensesCommission.data,
+        aircraft: expensesAircraft.data,
+      });
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedSafra]);
+
+  // Filter and search function
+  const filteredExpenses = expenses[activeTab].filter(expense =>
+    (
+      expense?.aircraft_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense?.id == parseInt(searchTerm) ||
+      expense?.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.origem.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    expense.confirmação_de_pagamento.toLowerCase().includes(filterPaymentStatus.toLowerCase())
+  )
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredExpenses.slice(indexOfFirstItem, indexOfLastItem)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedExpenses(expenses[activeTab].map(expense => expense.id))
+      setSelectedExpenses(currentItems.map(expense => expense.id))
     } else {
       setSelectedExpenses([])
     }
@@ -127,7 +164,7 @@ export function ExpenseList() {
     const { name, value } = e.target
     setEditingExpense(prev => {
       if (prev) {
-        return { ...prev, [name]: name === 'value' || name === 'percentage' ? parseFloat(value) : value }
+        return { ...prev, [name]: name === 'valor' || name === 'porcentagem' ? parseFloat(value) : value }
       }
       return null
     })
@@ -145,7 +182,7 @@ export function ExpenseList() {
         <Card key={expense.id} className="bg-[#556B2F] text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              ID: {expense.id} - {expense.date}
+              ID: {expense.id} - {expense.data}
             </CardTitle>
             <Button
               variant="ghost"
@@ -161,26 +198,95 @@ export function ExpenseList() {
           </CardHeader>
           <CardContent>
             <div className="text-xs">
-              <p>Origem: {expense.origin}</p>
-              <p>Valor: R$ {expense.value.toFixed(2)}</p>
-              <p>Pagamento: {expense.payment}</p>
+              <p>Aeronave: {expense.aircraft_name}</p>
+              <p>Piloto: {expense.employee_name}</p>
+              <p>Valor: R$ {expense.valor}</p>
+              <p>Pagamento: {expense.confirmação_de_pagamento}</p>
             </div>
             {expandedRows.includes(expense.id) && (
               <div className="mt-2 text-xs">
-                {expense.type && <p>Tipo: {expense.type}</p>}
-                {expense.description && <p>Descrição: {expense.description}</p>}
-                {expense.aircraft && <p>Aeronave: {expense.aircraft}</p>}
-                {expense.percentage && <p>Porcentagem: {expense.percentage}%</p>}
-                {expense.name && <p>Nome: {expense.name}</p>}
-                {expense.service && <p>Serviço: {expense.service}</p>}
-                <p>Safra: {expense.harvest}</p>
+                {expense.tipo && <p>Tipo: {expense.tipo}</p>}
+                {expense.descricao && <p>Descrição: {expense.descricao}</p>}
+                {expense.porcentagem && <p>Porcentagem: {expense.porcentagem}%</p>}
+                {expense.service_name && <p>Serviço: {expense.service_name}</p>}
+                {expense.origem && <p>Origem: {expense.origem}</p>}
+                {expense.harvest && <p>Safra: {expense.harvest}</p>}
               </div>
             )}
+            <div className="mt-2 flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => handleEdit(expense)}>
+                <Edit className="h-4 w-4 text-black" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDelete(expense.id)}>
+                <Trash2 className="h-4 w-4 text-black" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}
     </div>
   )
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage)
+  const maxVisibleButtons = 5
+
+  const renderPaginationButtons = () => {
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1)
+
+    if (endPage - startPage + 1 < maxVisibleButtons) {
+      startPage = Math.max(1, endPage - maxVisibleButtons + 1)
+    }
+
+    const buttons = []
+
+    if (startPage > 1) {
+      buttons.push(
+        <Button key="first" onClick={() => paginate(1)} variant="outline" className="text-white">
+          <ChevronsLeft className="h-4 w-4 text-black" />
+        </Button>
+      )
+    }
+
+    if (currentPage > 1) {
+      buttons.push(
+        <Button key="prev" onClick={() => paginate(currentPage - 1)} variant="outline" className="text-white">
+          <ChevronLeft className="h-4 w-4 text-black" />
+        </Button>
+      )
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <Button
+          key={i}
+          onClick={() => paginate(i)}
+          variant={currentPage === i ? "default" : "outline"}
+          className={`${currentPage === i ? "bg-[#8FBC8F] text-white" : "text-black"}`}
+        >
+          {i}
+        </Button>
+      )
+    }
+
+    if (currentPage < totalPages) {
+      buttons.push(
+        <Button key="next" onClick={() => paginate(currentPage + 1)} variant="outline" className="text-white">
+          <ChevronRight className="h-4 w-4 text-black" />
+        </Button>
+      )
+    }
+
+    if (endPage < totalPages) {
+      buttons.push(
+        <Button key="last" onClick={() => paginate(totalPages)} variant="outline" className="text-white">
+          <ChevronsRight className="h-4 w-4 text-black" />
+        </Button>
+      )
+    }
+
+    return buttons
+  }
 
   const renderDesktopTable = (expenses: Expense[]) => (
     <Table>
@@ -194,21 +300,20 @@ export function ExpenseList() {
           </TableHead>
           <TableHead className="w-[100px] text-white">Ações</TableHead>
           <TableHead className='text-white'>ID</TableHead>
-          <TableHead className='text-white'>Data</TableHead>
-          <TableHead className='text-white'>Origem</TableHead>
-          {activeTab !== 'commission' && <TableHead className='text-white'>Tipo</TableHead>}
-          <TableHead className='text-white'>Descrição</TableHead>
-          <TableHead className='text-white'>Valor</TableHead>
-          <TableHead className='text-white'>Pagamento</TableHead>
           {activeTab !== 'commission' && <TableHead className='text-white'>Aeronave</TableHead>}
           {activeTab === 'commission' && (
             <>
-              <TableHead className='text-white'>Porcentagem</TableHead>
               <TableHead className='text-white'>Nome</TableHead>
               <TableHead className='text-white'>Serviço</TableHead>
+              <TableHead className='text-white'>Porcentagem</TableHead>
             </>
           )}
-          <TableHead className='text-white'>Safra</TableHead>
+          <TableHead className='text-white'>Data</TableHead>
+          <TableHead className='text-white'>Origem</TableHead>
+          {activeTab !== 'commission' && activeTab !== 'specific' && <TableHead className='text-white'>Tipo</TableHead>}
+          <TableHead className='text-white'>Descrição</TableHead>
+          <TableHead className='text-white'>Valor</TableHead>
+          <TableHead className='text-white'>Pagamento</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -242,88 +347,17 @@ export function ExpenseList() {
               </div>
             </TableCell>
             <TableCell>{expense.id}</TableCell>
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="date"
-                  value={editingExpense?.date || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                expense.date
-              )}
-            </TableCell>
-            <TableCell>{expense.origin}</TableCell>
             {activeTab !== 'commission' && (
               <TableCell>
                 {editingId === expense.id ? (
                   <Input
-                    name="type"
-                    value={editingExpense?.type || ''}
+                    name="aircraft_name"
+                    value={editingExpense?.aircraft_name || ''}
                     onChange={handleEditInputChange}
                     className="bg-[#556B2F] text-white border-[#8FBC8F]"
                   />
                 ) : (
-                  expense.type
-                )}
-              </TableCell>
-            )}
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="description"
-                  value={editingExpense?.description || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                expense.description
-              )}
-            </TableCell>
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="value"
-                  type="number"
-                  value={editingExpense?.value || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                `R$ ${expense.value.toFixed(2)}`
-              )}
-            </TableCell>
-            <TableCell>
-              {editingId === expense.id ? (
-                <Select
-                  name="payment"
-                  value={editingExpense?.payment || ''}
-                  onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, payment: value } : null)}
-                >
-                  <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
-                    <SelectValue placeholder="Status de pagamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pago">Pago</SelectItem>
-                    <SelectItem  value="Pendente">Pendente</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                expense.payment
-              )}
-            </TableCell>
-            {activeTab !== 'commission' && (
-              <TableCell>
-                {editingId === expense.id ? (
-                  <Input
-                    name="aircraft"
-                    value={editingExpense?.aircraft || ''}
-                    onChange={handleEditInputChange}
-                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                  />
-                ) : (
-                  expense.aircraft
+                  expense.aircraft_name
                 )}
               </TableCell>
             )}
@@ -332,38 +366,38 @@ export function ExpenseList() {
                 <TableCell>
                   {editingId === expense.id ? (
                     <Input
-                      name="percentage"
+                      name="employee_name"
+                      value={editingExpense?.employee_name || ''}
+                      onChange={handleEditInputChange}
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                    />
+                  ) : (
+                    expense.employee_name
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === expense.id ? (
+                    <Input
+                      name="service_name"
+                      value={editingExpense?.service_name || ''}
+                      onChange={handleEditInputChange}
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                    />
+                  ) : (
+                    expense.service_name
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === expense.id ? (
+                    <Input
+                      name="porcentagem"
                       type="number"
-                      value={editingExpense?.percentage || ''}
+                      value={editingExpense?.porcentagem || ''}
                       onChange={handleEditInputChange}
                       className="bg-[#556B2F] text-white border-[#8FBC8F]"
                     />
                   ) : (
-                    `${expense.percentage}%`
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editingId === expense.id ? (
-                    <Input
-                      name="name"
-                      value={editingExpense?.name || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
-                  ) : (
-                    expense.name
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editingId === expense.id ? (
-                    <Input
-                      name="service"
-                      value={editingExpense?.service || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
-                  ) : (
-                    expense.service
+                    `${expense.porcentagem}%`
                   )}
                 </TableCell>
               </>
@@ -371,13 +405,73 @@ export function ExpenseList() {
             <TableCell>
               {editingId === expense.id ? (
                 <Input
-                  name="harvest"
-                  value={editingExpense?.harvest || ''}
+                  name="data"
+                  value={editingExpense?.data || ''}
                   onChange={handleEditInputChange}
                   className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
-                expense.harvest
+                expense.data
+              )}
+            </TableCell>
+            <TableCell>{expense.origem}</TableCell>
+            {activeTab !== 'commission' && activeTab !== 'specific' && (
+              <TableCell>
+                {editingId === expense.id ? (
+                  <Input
+                    name="tipo"
+                    value={editingExpense?.tipo || ''}
+                    onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                  />
+                ) : (
+                  expense.tipo
+                )}
+
+              </TableCell>
+            )}
+            <TableCell>
+              {editingId === expense.id ? (
+                <Input
+                  name="descricao"
+                  value={editingExpense?.descricao || ''}
+                  onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                />
+              ) : (
+                expense.descricao
+              )}
+            </TableCell>
+            <TableCell>
+              {editingId === expense.id ? (
+                <Input
+                  name="valor"
+                  type="number"
+                  value={editingExpense?.valor || ''}
+                  onChange={handleEditInputChange}
+                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                />
+              ) : (
+                `R$ ${expense.valor}`
+              )}
+            </TableCell>
+            <TableCell>
+              {editingId === expense.id ? (
+                <Select
+                  name="confirmação_de_pagamento"
+                  value={editingExpense?.confirmação_de_pagamento || ''}
+                  onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
+                >
+                  <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
+                    <SelectValue placeholder="Status de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                expense.confirmação_de_pagamento
               )}
             </TableCell>
           </TableRow>
@@ -400,49 +494,94 @@ export function ExpenseList() {
         {expenseTypes.map((type) => (
           <TabsContent key={type.key} value={type.key}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
-              <Input placeholder="Pesquisar despesas..." className="max-w-sm mb-2 sm:mb-0 bg-[#556B2F] text-white border-[#8FBC8F]" />
-              <div className="flex flex-col sm:flex-row gap-2">
-                {selectedExpenses.length > 0 && (
-                  <>
-                    <Select onValueChange={(value) => handleBulkUpdate('payment', value)}>
-                      <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
-                        <SelectValue placeholder="Atualizar pagamento" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#556B2F] text-white">
-                        <SelectItem value="Pago">Pago</SelectItem>
-                        <SelectItem value="Pendente">Pendente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="destructive" onClick={handleDeleteSelected} className="bg-[#FF6B6B] text-white hover:bg-[#FF4040]">
-                      Deletar Selecionados ({selectedExpenses.length})
-                    </Button>
-                  </>
-                )}
+              <div className="w-full sm:w-auto flex items-center space-x-2">
+                <Input
+                  placeholder="Pesquisar despesas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full sm:w-64 bg-[#556B2F] text-white border-[#8FBC8F]"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="sm:hidden"
+                >
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="hidden sm:flex space-x-2">
+                <Select value={filterPaymentStatus} onValueChange={setFilterPaymentStatus}>
+                  <SelectTrigger className="w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
+                    <SelectValue placeholder="Status de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#556B2F] text-white">
+                    <SelectItem value="''">Todos</SelectItem>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+            <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen} className="sm:hidden mb-4">
+              <CollapsibleContent>
+                <Select value={filterPaymentStatus} onValueChange={setFilterPaymentStatus}>
+                  <SelectTrigger className="w-full bg-[#556B2F] text-white border-[#8FBC8F]">
+                    <SelectValue placeholder="Status de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#556B2F] text-white">
+                    <SelectItem value="''">Todos</SelectItem>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CollapsibleContent>
+            </Collapsible>
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              {selectedExpenses.length > 0 && (
+                <>
+                  <Select onValueChange={(value) => handleBulkUpdate('confirmação_de_pagamento', value)}>
+                    <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
+                      <SelectValue placeholder="Atualizar pagamento" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#556B2F] text-white">
+                      <SelectItem value="Pago">Pago</SelectItem>
+                      <SelectItem value="Pendente">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="destructive" onClick={handleDeleteSelected} className="bg-[#FF6B6B] text-white hover:bg-[#FF4040]">
+                    Deletar Selecionados ({selectedExpenses.length})
+                  </Button>
+                </>
+              )}
+            </div>
             <div className="hidden sm:block">
-              {renderDesktopTable(expenses[type.key].filter(expense => expense.harvest === activeHarvest))}
+              {renderDesktopTable(currentItems)}
             </div>
             <div className="sm:hidden">
-              {renderMobileTable(expenses[type.key].filter(expense => expense.harvest === activeHarvest))}
+              {renderMobileTable(currentItems)}
+            </div>
+            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+              <div>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Itens por página" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {renderPaginationButtons()}
+              </div>
             </div>
           </TabsContent>
         ))}
       </Tabs>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="mt-4 bg-[#8FBC8F] text-[#4B5320] hover:bg-[#006400]">Exportar para Planilha</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px] bg-[#556B2F] text-white">
-          <DialogHeader>
-            <DialogTitle>Exportar Despesas</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Esta funcionalidade permite exportar as despesas para uma planilha externa para controle de contas a pagar. Isso ajuda a evitar erros e facilita a gestão financeira.</p>
-          </div>
-          <Button onClick={() => console.log("Exportar despesas")} className="bg-[#8FBC8F] text-[#4B5320] hover:bg-[#006400]">Exportar</Button>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

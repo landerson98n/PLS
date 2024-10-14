@@ -16,21 +16,22 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 export default function Dashboard() {
   const [activeComponent, setActiveComponent] = useState('dashboard')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
+  const [selectedSafra, setSelectedSafra] = useState('dashboard')
+  
   const renderActiveComponent = () => {
     switch (activeComponent) {
       case 'register':
-        return <RegisterService />
+        return <RegisterService selectedSafra={selectedSafra}/>
       case 'expenses':
-        return <RegisterExpense />
+        return <RegisterExpense selectedSafra={selectedSafra}/>
       case 'employees':
         return <RegisterEmployee />
       case 'aircraft':
         return <RegisterAircraft />
       case 'list-expenses':
-        return <ExpenseList />
+        return <ExpenseList selectedSafra={selectedSafra}/>
       case 'services':
-        return <ServiceList />
+        return <ServiceList selectedSafra={selectedSafra} />
       case 'dashboard':
       default:
         return <DashboardPage />
@@ -86,7 +87,7 @@ export default function Dashboard() {
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <div className='w-full sm:w-[30%]'>
-              <Select>
+              <Select onValueChange={setSelectedSafra}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a safra" />
                 </SelectTrigger>
