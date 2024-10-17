@@ -35,7 +35,14 @@ const expenseTypes = [
   { key: 'specific', label: 'Específicas' },
 ]
 
-export function ExpenseList({ selectedSafra }) {
+type Safra = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
+
+export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   const [activeTab, setActiveTab] = useState('aircraft')
   const [expenses, setExpenses] = useState<Record<string, Expense[]>>({
     aircraft: [],
@@ -47,7 +54,6 @@ export function ExpenseList({ selectedSafra }) {
   const [selectedExpenses, setSelectedExpenses] = useState<number[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
-  const [activeHarvest, setActiveHarvest] = useState('Safra 2023/2024')
   const [expandedRows, setExpandedRows] = useState<number[]>([])
 
   // New state variables for pagination, filtering, and search
@@ -79,16 +85,26 @@ export function ExpenseList({ selectedSafra }) {
     fetchData();
   }, [selectedSafra]);
 
-  // Filter and search function
-  const filteredExpenses = expenses[activeTab].filter(expense =>
-    (
+  const filteredExpenses = expenses[activeTab].filter(expense => {
+    const expenseDate = new Date(expense.data)
+    const safraStartDate = selectedSafra ? new Date(selectedSafra.startDate) : null
+    const safraEndDate = selectedSafra ? new Date(selectedSafra.endDate) : null
+
+    const isWithinSafraDates = !selectedSafra ||
+      (expenseDate >= safraStartDate && expenseDate <= safraEndDate)
+
+    const matchesSearch = searchTerm === '' ||
       expense?.aircraft_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense?.id == parseInt(searchTerm) ||
+      expense?.id.toString() === searchTerm ||
       expense?.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.origem.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    expense.confirmação_de_pagamento.toLowerCase().includes(filterPaymentStatus.toLowerCase())
-  )
+      expense.origem.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesPaymentStatus = filterPaymentStatus === '' ||
+      expense.confirmação_de_pagamento.toLowerCase() === filterPaymentStatus.toLowerCase()
+
+    return isWithinSafraDates && matchesSearch && matchesPaymentStatus
+  })
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage

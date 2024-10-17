@@ -3,69 +3,123 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from 'recharts'
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { addDays, format } from 'date-fns'
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from 'recharts'
+import { format } from 'date-fns'
 import axios from 'axios'
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
-const expenseTypes = ['Aeronaves', 'Específicas', 'Veículos', 'Comissões']
+type Safra = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
 
-export function DashboardPage() {
-  const [startDate, setStartDate] = useState<Date>(addDays(new Date(), -30))
-  const [endDate, setEndDate] = useState<Date>(new Date())
+export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
+  const [startDate, setStartDate] = useState<Date>()
+  const [endDate, setEndDate] = useState<Date>()
   const [selectedAircraft, setSelectedAircraft] = useState("")
+  const [selectedAircraftId, setSelectedAircraftId] = useState("")
   const [selectedEmployee, setSelectedEmployee] = useState("")
   const [aircraftReport, setAircraftReport] = useState<any>(null)
   const [revenueData, setRevenueData] = useState<any[]>([])
   const [profitData, setProfitData] = useState<any[]>([])
   const [balanceData, setBalanceData] = useState<any>(null)
   const [expensesData, setExpensesData] = useState<any[]>([])
+  const [aircrafts, setAircrafts] = useState<any[]>()
+  const [employees, setEmployees] = useState<any[]>()
 
   useEffect(() => {
     fetchData()
-  }, [startDate, endDate, selectedAircraft, selectedEmployee])
+  }, [startDate, endDate, selectedEmployee])
+
+  useEffect(() => {
+    setStartDate(selectedSafra.startDate)
+    setEndDate(selectedSafra.endDate)
+  }, [selectedSafra])
+
+  useEffect(() => {
+    fetchDataSpecific()
+  }, [selectedAircraftId, selectedEmployee, startDate, endDate])
+
+  const fetchDataSpecific = async () => {
+    const startDateStr = format(startDate, 'dd_MM_yyyy');
+    const endDateStr = format(endDate, 'dd_MM_yyyy');
+
+    if (selectedAircraftId) {
+      const aircraftReportRes = await axios.get(`http://0.0.0.0:8000/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraftId}/`)
+      setAircraftReport(aircraftReportRes.data)
+
+    }
+
+    if (selectedEmployee && selectedAircraftId) {
+      const expensesRes = await axios.get(`http://0.0.0.0:8000/despesas_por_categoria_especifica/${startDateStr}/${endDateStr}/${selectedEmployee}/${selectedAircraftId}/`)
+      setExpensesData(expensesRes.data)
+    }
+  }
+
 
   const fetchData = async () => {
     try {
-      const startDateStr = format(startDate, 'dd_MM_yyyy')
-      const endDateStr = format(endDate, 'dd_MM_yyyy')
+      const startDateStr = format(startDate, 'dd_MM_yyyy');
+      const endDateStr = format(endDate, 'dd_MM_yyyy');
 
-      const [revenueRes, profitRes, balanceRes] = await Promise.all([
-        axios.get(`/receita_por_aeronave/${startDateStr}/${endDateStr}/`),
-        axios.get(`/lucro_por_aeronave/${startDateStr}/${endDateStr}/`),
-        axios.get(`/gerar_balanco/${startDateStr}/${endDateStr}/`)
+      const [revenueRes, profitRes, balanceRes, aircrafts, employees] = await Promise.all([
+        axios.get(`http://0.0.0.0:8000/receita_por_aeronave/${startDateStr}/${endDateStr}/`),
+        axios.get(`http://0.0.0.0:8000/lucro_por_aeronave/${startDateStr}/${endDateStr}/`),
+        axios.get(`http://0.0.0.0:8000/gerar_balanco/${startDateStr}/${endDateStr}/`),
+        axios.get(`http://0.0.0.0:8000/aircraft/`),
+        axios.get(`http://0.0.0.0:8000/employees/`)
       ])
-
+      
+      setEmployees(employees.data)
       setRevenueData(revenueRes.data)
       setProfitData(profitRes.data)
       setBalanceData(balanceRes.data)
+      setAircrafts(aircrafts.data)
 
-      if (selectedAircraft) {
-        const aircraftReportRes = await axios.get(`/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraft}/`)
-        setAircraftReport(aircraftReportRes.data)
-      }
 
-      if (selectedEmployee && selectedAircraft) {
-        const expensesRes = await axios.get(`/despesas_por_categoria_especifica/${startDateStr}/${endDateStr}/${selectedEmployee}/${selectedAircraft}/`)
-        setExpensesData(expensesRes.data)
-      }
     } catch (error) {
       console.error("Error fetching data:", error)
     }
   }
 
+  const handleAircraft = (nome: string) => {
+    const selected = aircrafts?.filter((item) => {
+      return item.registration === nome
+    })
+
+    setSelectedAircraft(selected[0].registration)
+    setSelectedAircraftId(selected[0]?.id)
+  }
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#4B5320] p-2 rounded shadow-md">
+          <p className="text-white">{`Data: ${format(label, 'dd/MM/yyyy')}`}</p>
+          <p className="text-white">{`Valor: R$ ${payload[0].value.toFixed(2)}`}</p>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  const formatYAxis = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`
+    } else if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}K`
+    }
+    return value.toFixed(0)
+  }
+
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-        <h2 className="text-2xl font-bold">Dashboard Agrícola</h2>
+        <h2 className="text-2xl font-bold">Dashboard</h2>
         <div className="space-y-2 w-full md:w-auto">
-          <Select value={selectedAircraft} onValueChange={setSelectedAircraft}>
+          <Select value={selectedAircraft} onValueChange={handleAircraft}>
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Selecione a aeronave" />
             </SelectTrigger>
@@ -80,66 +134,74 @@ export function DashboardPage() {
               <SelectValue placeholder="Selecione o funcionário" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Funcionário 1</SelectItem>
-              <SelectItem value="2">Funcionário 2</SelectItem>
+              {employees?.map((item) => { return item.role === "Piloto" && <SelectItem value={item.id}>{item.name}</SelectItem> }
+              )}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-6">
-        <div className="flex-1">
-          <Label htmlFor="start-date">Data Inicial</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(startDate, "dd/MM/yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={(date) => date && setStartDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="flex-1">
-          <Label htmlFor="end-date">Data Final</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(endDate, "dd/MM/yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={(date) => date && setEndDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
 
       <div className="space-y-6">
+
+        {expensesData.length > 0 && (
+          <Card className="bg-[#556B2F]">
+            <CardHeader>
+              <CardTitle className='text-white'>Despesas Detalhadas</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={expensesData}>
+                  <XAxis
+                    dataKey="date"
+                    stroke='white'
+                    tick={{ fill: 'white' }}
+                  />
+                  <YAxis
+                    stroke='white'
+                    tick={{ fill: 'white' }}
+                    tickFormatter={formatYAxis}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    iconType="circle"
+                    wrapperStyle={{ color: 'white' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="white"
+                    name="Valor"
+                    dot={{ stroke: 'white', strokeWidth: 2, fill: '#556B2F' }}
+                    activeDot={{ r: 8, stroke: 'white', strokeWidth: 2, fill: '#4B5320' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {aircraftReport && (
+          <Card className="bg-[#556B2F]">
+            <CardHeader>
+              <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+            </CardHeader>
+            <CardContent className='text-white'>
+              <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
+              <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
+              <p>Valor Total Bruto: R$ {aircraftReport.valor_total_bruto_recebido.toLocaleString()}</p>
+              <p>Lucro Total: R$ {aircraftReport.lucro_total.toLocaleString()}</p>
+              <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
+              <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="bg-[#556B2F]">
           <CardHeader>
-            <CardTitle>Resumo Financeiro</CardTitle>
+            <CardTitle className='text-white'>Resumo Financeiro</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className='text-white'>
             {balanceData && (
               <>
                 <p>Receita Total: R$ {balanceData.total_valor_area.toLocaleString()}</p>
@@ -154,13 +216,13 @@ export function DashboardPage() {
 
         <Card className="bg-[#556B2F]">
           <CardHeader>
-            <CardTitle>Receita por Aeronave</CardTitle>
+            <CardTitle className='text-white'>Receita por Aeronave</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueData}>
-                <XAxis dataKey="aircraft_name" />
-                <YAxis />
+                <XAxis dataKey="aircraft_name" tick={{ fill: 'white' }} />
+                <YAxis tick={{ fill: 'white' }} tickFormatter={formatYAxis} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="total_valor_total_da_area" fill="#82ca9d" name="Receita" />
@@ -171,13 +233,13 @@ export function DashboardPage() {
 
         <Card className="bg-[#556B2F]">
           <CardHeader>
-            <CardTitle>Lucro por Aeronave</CardTitle>
+            <CardTitle className='text-white'>Lucro por Aeronave</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={profitData}>
-                <XAxis dataKey="aircraft_name" />
-                <YAxis />
+                <XAxis dataKey="aircraft_name" tick={{ fill: 'white' }} />
+                <YAxis tick={{ fill: 'white' }} tickFormatter={formatYAxis} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="lucro_por_area" fill="#8884d8" name="Lucro" />
@@ -185,41 +247,6 @@ export function DashboardPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {aircraftReport && (
-          <Card className="bg-[#556B2F]">
-            <CardHeader>
-              <CardTitle>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
-              <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
-              <p>Valor Total Bruto: R$ {aircraftReport.valor_total_bruto_recebido.toLocaleString()}</p>
-              <p>Lucro Total: R$ {aircraftReport.lucro_total.toLocaleString()}</p>
-              <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
-              <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {expensesData.length > 0 && (
-          <Card className="bg-[#556B2F]">
-            <CardHeader>
-              <CardTitle>Despesas Detalhadas</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={expensesData}>
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="value" stroke="#8884d8" name="Valor" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )

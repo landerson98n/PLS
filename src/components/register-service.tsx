@@ -40,7 +40,14 @@ const serviceSchema = z.object({
 
 type ServiceFormData = z.infer<typeof serviceSchema>
 
-export function RegisterService({selectedSafra}) {
+type Safra = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
+
+export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
   const [aeronaves, setAeronaves] = useState([])
   const [employees, setEmployees] = useState([])
 
@@ -70,13 +77,11 @@ export function RegisterService({selectedSafra}) {
     async function getData() {
       const avioesData = await axios.get('http://0.0.0.0:8000/aircraft')
       setAeronaves(avioesData.data)
-      console.log(avioesData);
 
       const empregadosData = await axios.get('http://0.0.0.0:8000/employees')
       setEmployees(empregadosData.data.filter((item) => {
         return item.role === "Piloto"
       }))
-      console.log(empregadosData);
     }
     getData()
 

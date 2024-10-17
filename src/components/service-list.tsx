@@ -52,7 +52,14 @@ type Expense = {
   service_id: string
 }
 
-export function ServiceList({ selectedSafra }) {
+type Safra = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
+
+export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const [services, setServices] = useState<Service[]>([])
   const [selectedServices, setSelectedServices] = useState<number[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -64,17 +71,11 @@ export function ServiceList({ selectedSafra }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterAircraft, setFilterAircraft] = useState('')
-  const [filterPilot, setFilterPilot] = useState('')
-  const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       const data = await getData()
       const dataExpense = await axios.get('http://0.0.0.0:8000/expenses')
-      console.log(dataExpense);
-
       setServices(data)
       setExpenses(dataExpense.data)
     }
@@ -87,13 +88,22 @@ export function ServiceList({ selectedSafra }) {
   }
 
   // Filter and search function
-  const filteredServices = services.filter(service =>
-    service.aeronave_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.employee_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.confirmacao_de_pagamento_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (service.nome_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.solicitante_da_area.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const filteredServices = services.filter(service => {
+    const serviceDate = new Date(service.data_inicio)
+    const safraStartDate = selectedSafra ? new Date(selectedSafra.startDate) : null
+    const safraEndDate = selectedSafra ? new Date(selectedSafra.endDate) : null
+
+    const isWithinSafraDates = !selectedSafra ||
+      (serviceDate >= safraStartDate && serviceDate <= safraEndDate)
+
+    const matchesSearch =
+      service.aeronave_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.employee_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.confirmacao_de_pagamento_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.nome_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.solicitante_da_area.toLowerCase().includes(searchTerm.toLowerCase())
+    return isWithinSafraDates && matchesSearch
+  })
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage
@@ -141,25 +151,6 @@ export function ServiceList({ selectedSafra }) {
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditingService(null)
-  }
-
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setEditingService(prev => {
-      if (prev) {
-        return { ...prev, [name]: value }
-      }
-      return null
-    })
-  }
-
-  const handleEditSelectChange = (name: string, value: string) => {
-    setEditingService(prev => {
-      if (prev) {
-        return { ...prev, [name]: value }
-      }
-      return null
-    })
   }
 
   const handleDeleteService = (serviceId: number) => {

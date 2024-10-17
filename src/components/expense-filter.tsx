@@ -63,7 +63,14 @@ const schema = z.discriminatedUnion('origem', [
 
 type ExpenseFormData = z.infer<typeof schema>
 
-export function RegisterExpense({ selectedSafra }) {
+type Safra = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+}
+
+export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
   const { control, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
